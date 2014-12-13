@@ -95,6 +95,12 @@ option to true::
 
     $cacheManager->tagResponse($response, array('different'), true);
 
+.. tip::
+
+    If you do not yet have the response available, you can use the
+    ``TagSubscriber::addTags($tags)`` method to have your tags added once the
+    response is being sent.
+
 ``invalidateTags()``
 --------------------
 

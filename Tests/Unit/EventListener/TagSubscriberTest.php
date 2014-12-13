@@ -124,6 +124,33 @@ class TagSubscriberTest extends \PHPUnit_Framework_TestCase
         $this->listener->onKernelResponse($event);
     }
 
+    public function testAddTagsGet()
+    {
+        $request = new Request();
+        $request->setMethod('GET');
+
+        $this->listener->addTags(array('a', 'b'));
+        $event = $this->getEvent($request);
+        $this->listener->onKernelResponse($event);
+
+        $this->assertEquals(
+            'a,b',
+            $event->getResponse()->headers->get($this->cacheManager->getTagsHeader())
+        );
+    }
+
+    public function testAddTagsPost()
+    {
+        $request = new Request();
+        $request->setMethod('POST');
+
+        $this->listener->addTags(array('a', 'b'));
+        $event = $this->getEvent($request);
+        $this->listener->onKernelResponse($event);
+
+        $this->assertFalse($event->getResponse()->headers->has($this->cacheManager->getTagsHeader()));
+    }
+
     protected function getEvent(Request $request, Response $response = null)
     {
         return new FilterResponseEvent(

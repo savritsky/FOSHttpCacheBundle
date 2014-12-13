@@ -37,6 +37,13 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
     private $expressionLanguage;
 
     /**
+     * List of tags to add to response.
+     *
+     * @var string[]
+     */
+    private $tags = array();
+
+    /**
      * Constructor
      *
      * @param CacheManager            $cacheManager
@@ -48,6 +55,22 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
     ) {
         $this->cacheManager = $cacheManager;
         $this->expressionLanguage = $expressionLanguage;
+    }
+
+    /**
+     * Add tags to set on the response to the current request.
+     *
+     * Contrary to CacheManager::tagResponse, this method can be called before
+     * the response object exists.
+     *
+     * Adding a tag during an unsafe request is forbidden and leads to an
+     * error. Use CacheManager::invalidateTags directly.
+     *
+     * @param array $tags List of tags to add.
+     */
+    public function addTags(array $tags)
+    {
+        $this->tags = array_merge($this->tags, $tags);
     }
 
     /**
@@ -63,12 +86,16 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
     {
         $request = $event->getRequest();
         $response = $event->getResponse();
-
-        $tags = array();
+        if ($request->isMethodSafe()) {
+            $tags = $this->tags;
+            $this->tags = array();
+        } else {
+            $tags = array();
+        }
 
         // Only set cache tags or invalidate them if response is successful
         if ($response->isSuccessful()) {
-            $tags = $this->getAnnotationTags($request);
+            $tags = array_merge($tags, $this->getAnnotationTags($request));
         }
 
         $configuredTags = $this->matchRule($request, $response);

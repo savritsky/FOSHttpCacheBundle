@@ -1,6 +1,13 @@
 Changelog
 =========
 
+1.3.0
+-----
+
+* **2015-02-20** Configured/annotated tags on subrequests (twig `render(controller())`)
+  are no longer ignored. Additionally, it is now possible to add tags from code before
+  the response has been created.
+
 1.2.0
 -----
 

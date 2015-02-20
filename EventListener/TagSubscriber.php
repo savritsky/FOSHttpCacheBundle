@@ -113,8 +113,13 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
         }
 
         if ($request->isMethodSafe()) {
-            // For safe requests (GET and HEAD), set cache tags on response
-            $this->cacheManager->tagResponse($response, $tags);
+            if ($event->isMasterRequest()) {
+                // For safe requests (GET and HEAD), set cache tags on response
+                $this->cacheManager->tagResponse($response, $tags);
+            } else {
+                // Retain tags to attach to response to master request
+                $this->tags = $tags;
+            }
         } else {
             // For non-safe methods, invalidate the tags
             $this->cacheManager->invalidateTags($tags);

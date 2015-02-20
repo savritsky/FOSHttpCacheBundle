@@ -83,6 +83,15 @@ class TagSubscriberTest extends WebTestCase
         $client->request('PUT', '/cached/51');
     }
 
+    public function testManualTagging()
+    {
+        $client = static::createClient();
+
+        $client->request('GET', '/tag_manual');
+        $response = $client->getResponse();
+        $this->assertEquals('manual-tag,sub-tag,sub-items,manual-items', $response->headers->get('X-Cache-Tags'));
+    }
+
     protected function tearDown()
     {
         static::createClient()->getContainer()->unmock('fos_http_cache.cache_manager');

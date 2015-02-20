@@ -46,4 +46,24 @@ class TagController extends Controller
     {
         return new Response('Forbidden', 403);
     }
+
+    /**
+     * @Tag("manual-items")
+     */
+    public function manualAction()
+    {
+        $this->get('fos_http_cache.event_listener.tag')->addTags(array('manual-tag'));
+
+        return $this->render('::container.html.twig');
+    }
+
+    /**
+     * @Tag("sub-items")
+     */
+    public function subrequestAction()
+    {
+        $this->get('fos_http_cache.event_listener.tag')->addTags(array('sub-tag'));
+
+        return new Response('subrequest');
+    }
 }

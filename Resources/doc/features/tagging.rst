@@ -60,7 +60,8 @@ use ``tagResponse($response, $tags)`` to set tags on a response::
         }
     }
 
-Or inject the ``TagSubscriber`` (service ``fos_http_cache.event_listener.tag``)
+If you have no access to the ``Response`` object (e.g. because it is not
+created yet), inject the ``TagSubscriber`` (service ``fos_http_cache.event_listener.tag``)
 and call ``addTags($tags)`` to set tags that will be added to the response once
 it exists::
 

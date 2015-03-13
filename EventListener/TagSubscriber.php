@@ -11,11 +11,12 @@
 
 namespace FOS\HttpCacheBundle\EventListener;
 
-use FOS\HttpCacheBundle\CacheManager;
+use FOS\HttpCacheBundle\Handler\TagHandler;
 use FOS\HttpCacheBundle\Configuration\Tag;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\FilterResponseEvent;
+use Symfony\Component\HttpKernel\HttpKernelInterface;
 use Symfony\Component\HttpKernel\KernelEvents;
 use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 
@@ -27,9 +28,9 @@ use Symfony\Component\ExpressionLanguage\ExpressionLanguage;
 class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInterface
 {
     /**
-     * @var CacheManager
+     * @var TagHandler
      */
-    private $cacheManager;
+    private $tagHandler;
 
     /**
      * @var ExpressionLanguage
@@ -37,40 +38,17 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
     private $expressionLanguage;
 
     /**
-     * List of tags to add to response.
-     *
-     * @var string[]
-     */
-    private $tags = array();
-
-    /**
      * Constructor
      *
-     * @param CacheManager            $cacheManager
+     * @param TagHandler              $tagHandler
      * @param ExpressionLanguage|null $expressionLanguage
      */
     public function __construct(
-        CacheManager $cacheManager,
+        TagHandler $tagHandler,
         ExpressionLanguage $expressionLanguage = null
     ) {
-        $this->cacheManager = $cacheManager;
+        $this->tagHandler = $tagHandler;
         $this->expressionLanguage = $expressionLanguage;
-    }
-
-    /**
-     * Add tags to set on the response to the current request.
-     *
-     * Contrary to CacheManager::tagResponse, this method can be called before
-     * the response object exists.
-     *
-     * Adding a tag during an unsafe request is forbidden and leads to an
-     * error. Use CacheManager::invalidateTags directly.
-     *
-     * @param array $tags List of tags to add.
-     */
-    public function addTags(array $tags)
-    {
-        $this->tags = array_merge($this->tags, $tags);
     }
 
     /**
@@ -86,43 +64,30 @@ class TagSubscriber extends AbstractRuleSubscriber implements EventSubscriberInt
     {
         $request = $event->getRequest();
         $response = $event->getResponse();
-        if ($request->isMethodSafe()) {
-            $tags = $this->tags;
-            $this->tags = array();
-        } else {
-            $tags = array();
-        }
 
+        $tags = array();
         // Only set cache tags or invalidate them if response is successful
         if ($response->isSuccessful()) {
-            $tags = array_merge($tags, $this->getAnnotationTags($request));
+            $tags = $this->getAnnotationTags($request);
         }
 
         $configuredTags = $this->matchRule($request, $response);
         if ($configuredTags) {
-            foreach ($configuredTags['tags'] as $tag) {
-                $tags[] = $tag;
-            }
+            $tags = array_merge($tags, $configuredTags['tags']);
             foreach ($configuredTags['expressions'] as $expression) {
                 $tags[] = $this->evaluateTag($expression, $request);
             }
         }
 
-        if (!count($tags)) {
-            return;
-        }
-
         if ($request->isMethodSafe()) {
-            if ($event->isMasterRequest()) {
+            $this->tagHandler->addTags($tags);
+            if (HttpKernelInterface::MASTER_REQUEST === $event->getRequestType()) {
                 // For safe requests (GET and HEAD), set cache tags on response
-                $this->cacheManager->tagResponse($response, $tags);
-            } else {
-                // Retain tags to attach to response to master request
-                $this->tags = $tags;
+                $this->tagHandler->tagResponse($response);
             }
-        } else {
+        } elseif (count($tags)) {
             // For non-safe methods, invalidate the tags
-            $this->cacheManager->invalidateTags($tags);
+            $this->tagHandler->invalidateTags($tags);
         }
     }
 

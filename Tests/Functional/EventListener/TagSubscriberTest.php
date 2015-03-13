@@ -36,8 +36,9 @@ class TagSubscriberTest extends WebTestCase
             'fos_http_cache.cache_manager',
             '\FOS\HttpCacheBundle\CacheManager'
         )
-            ->shouldReceive('invalidateTags')->once()->with(array('all-items'))
-            ->shouldReceive('invalidateTags')->once()->with(array('item-123'))
+            ->shouldReceive('supports')->andReturn(true)
+            ->shouldReceive('invalidate')->with(array('X-Cache-Tags' => '(all\\-items)(,.+)?$'))
+            ->shouldReceive('invalidate')->with(array('X-Cache-Tags' => '(item\\-123)(,.+)?$'))
             ->shouldReceive('flush')->once()
         ;
 
@@ -52,7 +53,8 @@ class TagSubscriberTest extends WebTestCase
             'fos_http_cache.cache_manager',
             '\FOS\HttpCacheBundle\CacheManager'
         )
-            ->shouldReceive('invalidateTags')->never()
+            ->shouldReceive('supports')->andReturn(true)
+            ->shouldReceive('invalidate')->never()
             ->shouldReceive('flush')->once()
         ;
 
@@ -76,7 +78,8 @@ class TagSubscriberTest extends WebTestCase
             'fos_http_cache.cache_manager',
             '\FOS\HttpCacheBundle\CacheManager'
         )
-            ->shouldReceive('invalidateTags')->once()->with(array('area', 'area-51'))
+            ->shouldReceive('supports')->andReturn(true)
+            ->shouldReceive('invalidate')->once()->with(array('X-Cache-Tags' => '(area|area\\-51)(,.+)?$'))
             ->shouldReceive('flush')->once()
         ;
 

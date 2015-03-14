@@ -1,6 +1,11 @@
 Changelog
 =========
 
+1.3.0
+-----
+
+* **2015-03-14** Added support for a simple Etag header in the header configuration.
+
 1.2.0
 -----
 

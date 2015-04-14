@@ -38,51 +38,27 @@ annotations.
 Tagging from code
 ~~~~~~~~~~~~~~~~~
 
-Inject the ``CacheManager`` (service ``fos_http_cache.cache_manager``) and
-use ``tagResponse($response, $tags)`` to set tags on a response::
+Inject the ``TagHandler`` (service ``fos_http_cache.handler.tag_handler``) and
+use ``addTags($tags)`` to add tags that will be set on the response::
 
-    use Symfony\Component\HttpFoundation\Response;
-    use FOS\HttpCacheBundle\CacheManager;
+    use FOS\HttpCacheBundle\Handler\TagHandler;
 
     class NewsController
     {
         /**
-         * @var CacheManager
+         * @var TagHandler
          */
-        private $cacheManager;
+        private $tagHandler;
 
         public function articleAction($id)
         {
-            $response = new Response('Some news article');
-            $this->cacheManager->tagResponse($response, array('news', 'news-' . $id));
-
-            return $response;
-        }
-    }
-
-If you have no access to the ``Response`` object (e.g. because it is not
-created yet), inject the ``TagSubscriber`` (service ``fos_http_cache.event_listener.tag``)
-and call ``addTags($tags)`` to set tags that will be added to the response once
-it exists::
-
-    use FOS\HttpCacheBundle\EventListener\TagSubscriber;
-
-    class Service
-    {
-        /**
-         * @var TagSubscriber
-         */
-        private $tagSubscriber;
-
-        public function doStuff($thing)
-        {
-            $this->tagSubscriber->addTags(array('news', 'news-' . $thing->getId()));
+            $this->tagHandler->addTags(array('news', 'news-' . $id));
 
             // ...
         }
     }
 
-To invalidate tags, call ``CacheManager::invalidateTags($tags)``::
+To invalidate tags, call ``TagHandler::invalidateTags($tags)``::
 
     class NewsController
     {
@@ -92,13 +68,13 @@ To invalidate tags, call ``CacheManager::invalidateTags($tags)``::
         {
             // ...
 
-            $this->cacheManager->invalidateTags(array('news-' . $id))->flush();
+            $this->tagHandler->invalidateTags(array('news-' . $id));
 
             // ...
         }
     }
 
-See the :ref:`Cache Manager reference <cache_manager_tags>` for full details.
+See the :ref:`Tag Handler reference <tag_handler_addtags>` for full details.
 
 Configuration
 ~~~~~~~~~~~~~

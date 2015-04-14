@@ -11,6 +11,7 @@
 
 namespace FOS\HttpCacheBundle\Command;
 
+use FOS\HttpCacheBundle\CacheManager;
 use Symfony\Bundle\FrameworkBundle\Command\ContainerAwareCommand;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
@@ -38,11 +39,21 @@ class InvalidateTagCommand extends ContainerAwareCommand
      * If no cache manager is specified explicitly, fos_http_cache.cache_manager
      * is automatically loaded.
      *
-     * @param TagHandler|null $tagHandler  The tag handlerto talk to.
-     * @param string          $commandName Name of this command, in case you want to reuse it.
+     * Passing CacheManager as argument is deprecated and will be restricted to TagHandler in 2.0.
+     *
+     * @param TagHandler|CacheManager|null $tagHandler  The tag handler to talk to.
+     * @param string                       $commandName Name of this command, in case you want to reuse it.
      */
-    public function __construct(TagHandler $tagHandler = null, $commandName = 'fos:httpcache:invalidate:tag')
+    public function __construct($tagHandler = null, $commandName = 'fos:httpcache:invalidate:tag')
     {
+        if (!($tagHandler instanceof TagHandler || $tagHandler instanceof CacheManager || null === $tagHandler)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'Expected instance of TagHandler, CacheManager or null, but got %s',
+                    get_class($tagHandler)
+                )
+            );
+        }
         $this->commandName = $commandName;
         $this->tagHandler = $tagHandler;
         parent::__construct();
@@ -83,7 +94,7 @@ EOF
     }
 
     /**
-     * @return TagHandler
+     * @return TagHandler|CacheManager
      */
     protected function getTagManager()
     {
